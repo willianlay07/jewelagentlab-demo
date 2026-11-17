@@ -104,6 +104,60 @@ services:
     networks:
       - internal
 
+  
+  gmail_sync_worker:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+
+    command:
+      - rq
+      - worker
+      - gmail_sync
+      - --url
+      - redis://redis:6379/0
+
+    env_file:
+      - ./docker/demo.env
+
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+  gmail_sync_scheduler:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+
+    command:
+      - python
+      - -m
+      - app.services.gmail_sync_scheduler
+
+    env_file:
+      - ./docker/demo.env
+
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+
   chroma:
     image: chromadb/chroma:1.5.9
     restart: unless-stopped
