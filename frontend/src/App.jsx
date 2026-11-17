@@ -19,10 +19,16 @@ import GmailInbox from "./pages/GmailInbox";
 export default function App() {
   return (
     <Routes>
+      {/* Homepage: redirect to login */}
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
+
       {/* Public Route */}
       <Route
-          path="/login"
-          element={<Login />}
+        path="/login"
+        element={<Login />}
       />
 
       {/* Protected Routes - Admin and Staff */}
@@ -48,9 +54,9 @@ export default function App() {
             element={<AISearch />}
           />
 
-          <Route 
-            path="/gmail-inbox" 
-            element={<GmailInbox />} 
+          <Route
+            path="/gmail-inbox"
+            element={<GmailInbox />}
           />
 
           {/* Admin Only Routes */}
@@ -70,14 +76,9 @@ export default function App() {
 
       {/* Redirect Unknown Routes */}
       <Route
-          path="*"
-          element={
-              <Navigate
-                  to="/dashboard"
-                  replace
-              />
-          }
+        path="*"
+        element={<Navigate to="/dashboard" replace />}
       />
     </Routes>
-  )
+  );
 }
