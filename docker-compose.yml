@@ -1,0 +1,128 @@
+name: jewelagentlab-demo
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: jewelagentlab_demo
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: ${DEMO_DB_PASSWORD:?Set DEMO_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+    env_file:
+      - ./docker/demo.env
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_PATH: data/chroma
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - chroma_data:/app/data/chroma
+      - product_images:/app/data/product_images
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+  frontend:
+    image: jewelagentlab-frontend:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  indexing_worker:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+    command: ["rq", "worker", "product_indexing", "--url", "redis://redis:6379/0"]
+    env_file:
+      - ./docker/demo.env
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_PATH: data/chroma
+    volumes:
+      - chroma_data:/app/data/chroma
+      - product_images:/app/data/product_images
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+  
+  indexing_dispatcher:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+    command: ["python", "-m", "app.services.indexing_dispatcher"]
+    env_file:
+      - ./docker/demo.env
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_PATH: data/chroma
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+  chroma:
+    image: chromadb/chroma:1.5.9
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /data
+    volumes:
+      - chroma_server_data:/data
+    networks:
+      - internal
+
+
+volumes:
+  mysql_data:
+  redis_data:
+  chroma_data:
+  product_images:
+  chroma_server_data:
+
+networks:
+  internal:
+    driver: bridge

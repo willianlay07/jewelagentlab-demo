@@ -1,0 +1,52 @@
+# Private credentials
+*.pem
+*.key
+*credentials*.json
+*token*.json
+
+# Local development files
+.vscode/
+.idea/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node.js / React
+node_modules/
+frontend/dist/
+
+# ChromaDB vector database
+data/chroma/
+
+# Uploaded jewellery product images
+data/product_images/
+
+# Other uploaded files
+uploads/
+
+# Operating system
+.DS_Store
+
+# Logs
+*.log
+
+# Docker
+docker/*.env
+docker/*.env.*
+!docker/*.env.example
+
+# Python test files
+test_*.py
+
+# Test directories
+tests/
+**/tests/

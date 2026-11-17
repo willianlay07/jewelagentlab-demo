@@ -1,0 +1,124 @@
+
+@import "tailwindcss";
+
+/* Prevent narrow screens from overflowing */
+html, body, #root { min-width: 0; min-height: 100%; }
+body { margin: 0; }
+img { max-width: 100%; }
+
+/* Global Styles */
+:root {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    color: #1d2730;
+    background: #f7f8fa;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+button {
+    cursor: pointer;
+}
+
+input,
+select,
+textarea {
+    outline: none;
+}
+
+/* Form Fields */
+.field {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    border: 1px solid #dbe0e6;
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: white;
+}
+
+.field:focus {
+    border-color: #a18b69;
+    box-shadow: 0 0 0 2px #a18b6920;
+}
+
+/* Primary Button */
+.btn {
+    background: #202b33;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+}
+
+.btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Secondary Button */
+.btn-light {
+    background: white;
+    border: 1px solid #dce0e4;
+    color: #27323b;
+    border-radius: 10px;
+    padding: 10px 15px;
+}
+
+/* Card */
+.card {
+    min-width: 0;
+    background: white;
+    border: 1px solid #e8eaee;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+@media (max-width: 639px) {
+    .card { padding: 16px; }
+    .btn, .btn-light { max-width: 100%; }
+}
+
+/* Form Label */
+.label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #47515b;
+}
+
+/* Muted Text */
+.muted {
+    color: #78838c;
+}
+
+/* Status Badge */
+.pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+/* Error Message */
+.error {
+    background: #fff0ef;
+    color: #a52a24;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 12px 0;
+    white-space: pre-wrap;
+}
+
+/* Success Message */
+.success {
+    background: #eef9f0;
+    color: #21683d;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 12px 0;
+}
