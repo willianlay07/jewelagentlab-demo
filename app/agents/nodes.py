@@ -7,7 +7,10 @@ from openai import OpenAI
 from app.agents.model_router import choose_route
 from app.agents.parser import parse_rules, parse_with_model
 from app.core.ai_config import ai_settings
-from app.services.ai_search_service import retrieve_products
+from app.services.ai_search_service import (
+    retrieve_products,
+    find_named_products,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +59,87 @@ def parse_node(state):
             "search_method": method, "model_used": model_used}
 
 
+
 def retrieve_node(state, config: RunnableConfig):
     db = config.get("configurable", {}).get("db")
+
     if db is None:
-        raise RuntimeError("Database session missing from LangGraph configuration")
+        raise RuntimeError(
+            "Database session missing from LangGraph configuration"
+        )
+
+    question = state.get("question", "")
+    filters = state.get("filters", {})
+    semantic_query = state.get("semantic_query", "")
+    limit = state.get("limit", 5)
+
+    # First, identify explicitly named approved products.
+    named_products = find_named_products(db, question)
+
+    # Avoid applying inferred shape filters from product names.
+    if named_products:
+        filters = {
+            key: value
+            for key, value in filters.items()
+            if key not in (
+                "main_stone_shape",
+                "prong_count",
+                "band_style",
+            )
+        }
+
+    # Retrieve normally using structured and semantic search.
     products = retrieve_products(
         db=db,
-        filters=state.get("filters", {}),
-        semantic_query=state.get("semantic_query", ""),
-        limit=state.get("limit", 5),
+        filters=filters,
+        semantic_query=semantic_query,
+        limit=limit,
     )
-    return {"products": products, "product_ids": [p["id"] for p in products]}
+
+    # Merge explicitly named products with retrieved results.
+    # Only include approved products satisfying remaining filters.
+    from app.services.ai_search_service import matches_filters
+
+    existing_ids = {p["id"] for p in products}
+
+    for product in named_products:
+        if product.id in existing_ids:
+            continue
+
+        if not matches_filters(product, filters):
+            continue
+
+        products.append({
+            "id": product.id,
+            "code": product.code,
+            "name": product.name,
+            "category": product.category,
+            "silver_price": product.silver_price,
+            "gold_price": product.gold_price,
+            "description": product.description,
+            "attributes": product.attributes or {},
+            "images": [
+                {
+                    "id": image.id,
+                    "image_path": image.image_path,
+                    "sort_order": image.sort_order,
+                }
+                for image in product.images
+            ],
+        })
+
+        existing_ids.add(product.id)
+
+        if len(products) >= limit:
+            break
+
+    products = products[:limit]
+
+    return {
+        "products": products,
+        "product_ids": [p["id"] for p in products],
+    }
+
 
 
 def generate_node(state):

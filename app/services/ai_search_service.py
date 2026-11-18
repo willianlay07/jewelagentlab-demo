@@ -39,6 +39,52 @@ def matches_filters(product, filters):
 
     return True
 
+
+def find_named_products(db, question: str) -> list[Product]:
+    """
+    Find approved products explicitly mentioned by
+    their full name or product code in a question.
+    """
+    import re
+
+    if not question or not question.strip():
+        return []
+
+    approved = db.scalars(
+        select(Product).where(Product.status == "approved")
+    ).all()
+
+    question_normalized = re.sub(
+        r"\s+", " ", question.casefold()
+    ).strip()
+
+    matches = []
+
+    for product in approved:
+        name = re.sub(
+            r"\s+", " ", product.name.casefold()
+        ).strip()
+
+        code = product.code.strip()
+
+        name_matched = (
+            bool(name) and name in question_normalized
+        )
+
+        code_matched = bool(
+            code and re.search(
+                rf"(?<!\w){re.escape(code)}(?!\w)",
+                question,
+                re.IGNORECASE
+            )
+        )
+
+        if name_matched or code_matched:
+            matches.append(product)
+
+    return matches
+
+
 def retrieve_products(db, filters: dict, semantic_query: str, limit: int = 5) -> list[dict]:
     # Existing structured search returns SQLAlchemy Product objects.
     structured = search_structured(db, filters, limit=1000) if filters else []
@@ -46,8 +92,20 @@ def retrieve_products(db, filters: dict, semantic_query: str, limit: int = 5) ->
     semantic_ids = vector_search(semantic_query, limit=1000) if semantic_query else []
 
     if semantic_query and filters:
+        # MySQL determines which products match the filters.
         allowed = set(structured_ids)
-        ids = [pid for pid in semantic_ids if pid in allowed]
+
+        # Rank matching products using ChromaDB.
+        ranked_ids = [
+            pid for pid in semantic_ids
+            if pid in allowed
+        ]
+
+        # Include matching products that ChromaDB missed.
+        ids = ranked_ids + [
+            pid for pid in structured_ids
+            if pid not in ranked_ids
+        ]
     elif semantic_query:
         ids = semantic_ids
     elif filters:

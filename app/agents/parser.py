@@ -18,60 +18,79 @@ CATEGORIES = {
 
 SHAPES = ("round", "oval", "pear", "marquise", "emerald", "cushion", "princess", "heart", "radiant")
 
-METALS = ("platinum", "white gold", "yellow gold", "rose gold", "silver")
+METALS = ("platinum", "white gold", "yellow gold", "rose gold", "silver", "gold")
 
-def parse_rules(
-    question: str
-) -> dict:
+
+def parse_rules(question: str) -> dict:
     q = question.lower()
-
     f = {}
+
+    # 1. Product category
     for word, category in CATEGORIES.items():
-        if re.search(
-            r"\b" + word + r"\b",
-            q
-        ):
+        if re.search(r"\b" + re.escape(word) + r"\b", q):
             f["category"] = category
             break
 
+    # 2. Price filtering (supports S$2,000)
+    money = r"(?:s\$|\$|sgd\s*)?\s*(\d[\d,]*(?:\.\d{1,2})?)"
 
-    money = r"(?:s\$|\$|sgd\s*)?\s*([0-9]+(?:\.[0-9]{1,2})?)"
+    below = re.search(
+        r"\b(?:under|below|less than|up to|maximum|max)\s*" + money,
+        q
+    )
 
-    below = re.search(r"(?:under|below|less than|up to|max(?:imum)?)\s*" + money, q)
-    above = re.search(r"(?:above|over|more than|at least|min(?:imum)?)\s*" + money, q)
+    above = re.search(
+        r"\b(?:above|over|more than|at least|minimum|min)\s*" + money,
+        q
+    )
 
-    between = re.search(r"between\s*"+money+r"\s*(?:and|to)\s*" + money, q)
+    between = re.search(
+        r"\bbetween\s*" + money + r"\s*(?:and|to)\s*" + money,
+        q
+    )
 
-    if below: 
-        f["max_price"] = float(below.group(1))
-    if above: 
-        f["min_price"] = float(above.group(1))
+    def amount(value):
+        return float(value.replace(",", ""))
 
-    if between: 
-        f["min_price"],f["max_price"] = map(float, between.groups())
+    if below:
+        f["max_price"] = amount(below.group(1))
 
+    if above:
+        f["min_price"] = amount(above.group(1))
+
+    if between:
+        f["min_price"] = amount(between.group(1))
+        f["max_price"] = amount(between.group(2))
+
+    # 3. Diamond shape
     for shape in SHAPES:
-        if re.search(r"\b"+shape+r"\b", q): 
+        if re.search(r"\b" + re.escape(shape) + r"\b", q):
             f["main_stone_shape"] = shape
             break
 
+    # 4. Metal pricing
     for metal in METALS:
         if re.search(r"\b" + re.escape(metal) + r"\b", q):
-            f["price_type"] = "silver" if metal == "silver" else "gold" if "gold" in metal else None
-            if f["price_type"] is None:
-                f.pop("price_type")
+            if metal == "silver":
+                f["price_type"] = "silver"
+            elif "gold" in metal:
+                f["price_type"] = "gold"
             break
 
+    # 5. Prong count
     prongs = re.search(r"\b(\d+)\s*(?:-| )?prongs?\b", q)
-    if prongs: 
+
+    if prongs:
         f["prong_count"] = int(prongs.group(1))
 
+    # 6. Band style
     for style in ("plain", "side stones"):
-        if style in q: 
+        if re.search(r"\b" + re.escape(style) + r"\b", q):
             f["band_style"] = style
-        break
+            break
 
     return f
+
 
 def parse_with_model(
     question: str, 
