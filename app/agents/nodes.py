@@ -97,6 +97,29 @@ def retrieve_node(state, config: RunnableConfig):
                         name, " "
                     )
 
+
+        # Remove category inferred only from a product name.
+        # Preserve category if explicitly requested outside names.
+        category = filters.get("category")
+
+        if category:
+            category_words = {
+                "ring": r"rings?",
+                "necklace": r"necklaces?",
+                "earrings": r"earrings?",
+                "bracelet": r"bracelets?",
+                "bangle": r"bangles?",
+            }
+
+            pattern = category_words.get(category)
+
+            if pattern and not re.search(
+                rf"\b(?:{pattern})\b",
+                question_without_names
+            ):
+                filters.pop("category", None)
+
+
         # Remove shape filter only when the shape word
         # came from the product name, not an explicit request.
         shape = filters.get("main_stone_shape")
