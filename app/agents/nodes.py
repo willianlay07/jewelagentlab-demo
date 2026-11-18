@@ -76,17 +76,37 @@ def retrieve_node(state, config: RunnableConfig):
     # First, identify explicitly named approved products.
     named_products = find_named_products(db, question)
 
-    # Avoid applying inferred shape filters from product names.
     if named_products:
-        filters = {
-            key: value
-            for key, value in filters.items()
-            if key not in (
-                "main_stone_shape",
-                "prong_count",
-                "band_style",
-            )
-        }
+        import re
+
+        question_without_names = question.casefold()
+
+        # Remove matched product names before checking whether
+        # jewellery attributes were explicitly requested.
+        for product in named_products:
+            full_name = product.name.casefold()
+            short_name = re.sub(
+                r"\s*\([^)]*\)\s*$",
+                "",
+                full_name
+            ).strip()
+
+            for name in (full_name, short_name):
+                if name:
+                    question_without_names = question_without_names.replace(
+                        name, " "
+                    )
+
+        # Remove shape filter only when the shape word
+        # came from the product name, not an explicit request.
+        shape = filters.get("main_stone_shape")
+
+        if shape and not re.search(
+            rf"\b{re.escape(str(shape).casefold())}\b",
+            question_without_names
+        ):
+            filters.pop("main_stone_shape", None)
+
 
     # Retrieve normally using structured and semantic search.
     products = retrieve_products(

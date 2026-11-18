@@ -40,10 +40,11 @@ def matches_filters(product, filters):
     return True
 
 
+
 def find_named_products(db, question: str) -> list[Product]:
     """
-    Find approved products explicitly mentioned by
-    their full name or product code in a question.
+    Match approved products by code, full name,
+    or name without a trailing carat specification.
     """
     import re
 
@@ -54,21 +55,30 @@ def find_named_products(db, question: str) -> list[Product]:
         select(Product).where(Product.status == "approved")
     ).all()
 
-    question_normalized = re.sub(
-        r"\s+", " ", question.casefold()
-    ).strip()
+    def normalize(value):
+        return re.sub(
+            r"\s+", " ", value.casefold()
+        ).strip()
 
+    normalized_question = normalize(question)
     matches = []
 
     for product in approved:
-        name = re.sub(
-            r"\s+", " ", product.name.casefold()
+        full_name = normalize(product.name)
+
+        short_name = re.sub(
+            r"\s*\([^)]*\)\s*$",
+            "",
+            full_name
         ).strip()
 
-        code = product.code.strip()
+        code = str(product.code).strip()
 
         name_matched = (
-            bool(name) and name in question_normalized
+            bool(full_name) and full_name in normalized_question
+        ) or (
+            len(short_name) >= 5
+            and short_name in normalized_question
         )
 
         code_matched = bool(
@@ -83,6 +93,7 @@ def find_named_products(db, question: str) -> list[Product]:
             matches.append(product)
 
     return matches
+
 
 
 def retrieve_products(db, filters: dict, semantic_query: str, limit: int = 5) -> list[dict]:
