@@ -45,7 +45,7 @@ export default function Layout() {
                 <div className="flex items-center gap-2">
                     <Gem size={25} className="text-[#d4b98b]" />
                     <div>
-                        <div className="font-bold tracking-widest">ORRO</div>
+                        <div className="font-bold tracking-widest">Jewel Agent</div>
                         <div className="text-[10px] text-slate-400">AI SALES ASSISTANT</div>
                     </div>
                 </div>
@@ -80,7 +80,7 @@ export default function Layout() {
                     <div className="flex items-center gap-2">
                         <Gem className="text-[#d4b98b]" />
                         <div>
-                            <div className="font-bold tracking-widest">ORRO</div>
+                            <div className="font-bold tracking-widest">Jewel Agent</div>
                             <div className="text-xs text-slate-400">AI SALES ASSISTANT</div>
                         </div>
                     </div>

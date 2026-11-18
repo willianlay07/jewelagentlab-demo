@@ -47,7 +47,7 @@ export default function Dashboard() {
     return (
         <>
             <h1 className="text-2xl sm:text-3xl font-bold">
-                Welcome to ORRO
+                Welcome to Jewel Agent
             </h1>
 
             <p className="muted mt-2 mb-7">

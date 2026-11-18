@@ -58,7 +58,7 @@ export default function AISearch() {
             </h1>
 
             <p className="muted mb-6">
-                Search approved ORRO jewellery using natural language.
+                Search approved jewellery using natural language.
             </p>
 
             {/* Search Form */}

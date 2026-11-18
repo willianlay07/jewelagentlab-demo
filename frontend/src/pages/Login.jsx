@@ -58,7 +58,7 @@ export default function Login() {
 
                     <div>
                         <h1 className="text-2xl font-bold tracking-widest">
-                            ORRO
+                            Jewel Agent
                         </h1>
 
                         <p className="muted text-sm">
