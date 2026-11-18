@@ -10,11 +10,46 @@ import { errorText } from "../api/axios";
 import ProductCard from "../components/ProductCard";
 import { Search } from "lucide-react";
 
+
 const examples = [
-    "Show me rings below $200",
-    "Show round diamond rings with 6 prongs",
-    "Find elegant minimalist necklaces"
+    {
+        label: "Compare Two Necklaces",
+        type: "Strong LLM",
+        question:
+            "Compare the Amour Heart Pendant and Astrée II Solitaire Pendant. Which would you recommend as an anniversary gift, and why?"
+    },
+    {
+        label: "AI Gift Recommendation",
+        type: "Strong LLM",
+        question:
+            "Recommend the best jewellery gift under S$400 in silver. Compare the available options and explain your choice."
+    },
+    {
+        label: "Compare Necklace vs Ring",
+        type: "Strong LLM",
+        question:
+            "Compare the Amour Heart Pendant and Marguerite Ring. Which would be more suitable for a romantic gift, and why?"
+    },
+    {
+        label: "Gold Budget Recommendation",
+        type: "Strong LLM",
+        question:
+            "Recommend a gold jewellery gift below S$2,000 and explain why it is the best option."
+    },
+    {
+        label: "Semantic Jewellery Search",
+        type: "Semantic",
+        question:
+            "Find elegant minimalist necklaces"
+    },
+    {
+        label: "Structured Price Search",
+        type: "Rules",
+        question:
+            "Show me necklaces below S$300 in silver"
+    }
 ];
+
 
 export default function AISearch() {
     const { user } = useAuth();
@@ -109,20 +144,36 @@ export default function AISearch() {
                         {loading ? "Searching..." : "Search"}
                     </button>
                 </div>
+                
+                {/* Compact Example Questions */}
+                <div className="mt-4 border-t border-slate-200 pt-3">
+                    <h3 className="text-sm font-semibold text-slate-800 mb-2">
+                        Try an AI Search Example
+                    </h3>
 
-                {/* Example Questions */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                    {examples.map((q) => (
-                        <button
-                            key={q}
-                            type="button"
-                            className="btn-light text-xs"
-                            onClick={() => run(null, q)}
-                        >
-                            {q}
-                        </button>
-                    ))}
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                        {examples.map((example) => (
+                            <button
+                                key={example.label}
+                                type="button"
+                                disabled={loading}
+                                onClick={() => run(null, example.question)}
+                                title={example.question}
+                                className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left hover:border-[#ad926a] hover:bg-slate-50 transition-colors disabled:opacity-50"
+                            >
+                                <span className="text-xs font-medium text-slate-800">
+                                    {example.label}
+                                </span>
+
+                                <span className="shrink-0 rounded bg-blue-50 px-2 py-1 text-[10px] font-medium text-blue-700">
+                                    {example.type}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
+
             </form>
 
             {/* Error Message */}
