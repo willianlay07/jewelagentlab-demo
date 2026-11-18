@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from langchain_core.runnables import RunnableConfig
 from openai import OpenAI
@@ -76,9 +77,58 @@ def retrieve_node(state, config: RunnableConfig):
     # First, identify explicitly named approved products.
     named_products = find_named_products(db, question)
 
-    if named_products:
-        import re
+    
+    # Explicit comparison between two or more named products:
+    # return only the named approved products.
+    is_comparison = bool(
+        re.search(r"\b(compare|versus|vs\.?)\b", question, re.IGNORECASE)
+    )
 
+    if is_comparison and len(named_products) >= 2:
+        from app.services.ai_search_service import matches_filters
+
+        # Keep explicit price and metal constraints.
+        # Product-name words should not become shape/category filters.
+        comparison_filters = {
+            key: value
+            for key, value in filters.items()
+            if key in ("min_price", "max_price", "price_type")
+        }
+
+        selected = []
+
+        for product in named_products:
+            if not matches_filters(product, comparison_filters):
+                continue
+
+            selected.append({
+                "id": product.id,
+                "code": product.code,
+                "name": product.name,
+                "category": product.category,
+                "silver_price": product.silver_price,
+                "gold_price": product.gold_price,
+                "description": product.description,
+                "attributes": product.attributes or {},
+                "images": [
+                    {
+                        "id": image.id,
+                        "image_path": image.image_path,
+                        "sort_order": image.sort_order,
+                    }
+                    for image in product.images
+                ],
+            })
+
+        selected = selected[:limit]
+
+        return {
+            "products": selected,
+            "product_ids": [p["id"] for p in selected],
+        }
+
+
+    if named_products:
         question_without_names = question.casefold()
 
         # Remove matched product names before checking whether
