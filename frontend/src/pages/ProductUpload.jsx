@@ -31,6 +31,7 @@ export default function ProductUpload() {
     const [files, setFiles] = useState([]);
     const [productId, setProductId] = useState(null);
     const [attributes, setAttributes] = useState("{}");
+    const [attributesSaved, setAttributesSaved] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
@@ -134,6 +135,8 @@ export default function ProductUpload() {
                 JSON.stringify(attrs, null, 2)
             );
 
+            setAttributesSaved(false);
+
             setMessage(
                 "AI suggestions loaded. Review them before saving."
             );
@@ -153,6 +156,8 @@ export default function ProductUpload() {
             await updateProduct(productId, {
                 attributes: attrs
             });
+
+            setAttributesSaved(true);
 
             setMessage(
                 "Attributes saved. Ready for submission."
@@ -397,22 +402,42 @@ export default function ProductUpload() {
                             Product Attributes (JSON)
                         </label>
 
+                        
                         <textarea
                             className="field min-w-0 font-mono text-xs sm:text-sm"
                             rows="12"
                             value={attributes}
-                            onChange={(e) =>
-                                setAttributes(e.target.value)
-                            }
+                            onChange={(e) => {
+                                setAttributes(e.target.value);
+                                setAttributesSaved(false);
+                            }}
                         />
 
                         <button
-                            className="btn-light inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                            disabled={busy}
+                            type="button"
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors w-full sm:w-auto ${
+                                attributesSaved
+                                    ? "bg-[#93999D] text-white cursor-not-allowed"
+                                    : "btn-light"
+                            }`}
+                            disabled={busy || attributesSaved}
                             onClick={save}
                         >
-                            {operation === "saving" ? <><Spinner /> Saving...</> : "Save Reviewed Attributes"}
+                            {operation === "saving" ? (
+                                <>
+                                    <Spinner />
+                                    Saving...
+                                </>
+                            ) : attributesSaved ? (
+                                <>
+                                    <CheckCircle2 size={17} />
+                                    Attributes Saved
+                                </>
+                            ) : (
+                                "Save Reviewed Attributes"
+                            )}
                         </button>
+
                     </div>
 
                     {/* Step 4: Submit for Approval */}
