@@ -417,6 +417,50 @@ export default function GmailInbox() {
                 )}
             </div>
 
+            
+            {/* AI Email Agent Demo Guide */}
+            <div className="rounded-xl border border-[#E3E8EE] bg-white px-4 py-3 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 className="text-sm font-semibold text-[#202B33]">
+                            Try the AI Email Agent
+                        </h2>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Send a test jewellery enquiry to experience AI classification,
+                            product recommendations and draft generation.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-slate-500">
+                            Demo inbox:
+                        </span>
+
+                        <span className="rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
+                            wilyanhein2013@gmail.com
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigator.clipboard.writeText("wilyanhein2013@gmail.com")
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50"
+                        >
+                            Copy
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-600">
+                    <span>1. Send a jewellery enquiry</span>
+                    <span>2. Sync Gmail</span>
+                    <span>3. Open the conversation</span>
+                    <span>4. Review the AI draft</span>
+                </div>
+            </div>
+
+
             {/* Alerts */}
             {error && (
                 <p
