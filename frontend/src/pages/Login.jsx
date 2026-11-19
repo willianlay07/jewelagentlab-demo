@@ -19,8 +19,8 @@ export default function Login() {
     const sessionExpired =
         searchParams.get("reason") === "session-expired";
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("admin@jewelagentlab.com");
+    const [password, setPassword] = useState("pass123@99");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
 
