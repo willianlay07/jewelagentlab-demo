@@ -23,11 +23,12 @@ def get(
             "Product not found"
         )
 
-    if user.role != "admin" and p.created_by != user.id:
-        raise HTTPException(
-            403,
-            "Not your product"
-        )
+    if (
+        user.role != "admin"
+        and p.created_by != user.id
+        and p.status != "approved"
+    ):
+        raise HTTPException(403, "Not allowed to view this product")
 
     return p
 
@@ -76,6 +77,13 @@ def update(
     data
 ):
     p = get(db, user, pid)
+
+    # Staff cannot edit products created by another user.
+    if user.role != "admin" and p.created_by != user.id:
+        raise HTTPException(
+            403,
+            "You cannot edit another user's product"
+        )
 
     if user.role != "admin" and p.status not in ("draft", "rejected"):
         raise HTTPException(
@@ -134,6 +142,9 @@ def submit(
         user,
         pid
     )
+
+    if user.role != "admin" and p.created_by != user.id:
+        raise HTTPException(403, "You cannot submit another user's product")
 
     if p.status not in ("draft","rejected"): 
         raise HTTPException(409,"Not a draft or rejected product")

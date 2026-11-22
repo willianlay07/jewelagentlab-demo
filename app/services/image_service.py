@@ -23,6 +23,13 @@ async def upload(
 ):
     p = get(db, user, pid)
 
+    # Staff cannot upload images to another user's product.
+    if user.role != "admin" and p.created_by != user.id:
+        raise HTTPException(
+            403,
+            "You cannot modify another user's product images"
+        )
+
     if user.role != "admin" and p.status not in ("draft","rejected"):
         raise HTTPException(
             409,

@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, File, UploadFile, HTTPException
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from app.db.session import Db
@@ -43,11 +43,18 @@ def listing(
     db: Db,
     user: CurrentUser
 ):
-    stmt = select(Product).options(selectinload(Product.images)).order_by(Product.id.desc())
+    stmt = (
+        select(Product)
+        .options(selectinload(Product.images))
+        .order_by(Product.id.desc())
+    )
 
     if user.role != "admin":
         stmt = stmt.where(
-            Product.created_by == user.id
+            or_(
+                Product.status == "approved",
+                Product.created_by == user.id
+            )
         )
 
     return db.scalars(stmt).all()
@@ -117,6 +124,12 @@ def analyze(
         user,
         pid
     )
+
+    if user.role != "admin" and p.created_by != user.id:
+        raise HTTPException(
+            403,
+            "You cannot analyze another user's product"
+        )
 
     if user.role!="admin" and p.status not in ("draft","rejected"): 
         raise HTTPException(
