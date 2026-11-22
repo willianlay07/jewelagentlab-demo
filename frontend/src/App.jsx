@@ -15,6 +15,7 @@ import AdminApprovals from "./pages/AdminApprovals";
 import StaffManagement from "./pages/StaffManagement";
 import AISearch from "./pages/AISearch";
 import GmailInbox from "./pages/GmailInbox";
+import KnowledgeBase from "./pages/KnowledgeBase";
 
 export default function App() {
   return (
@@ -52,6 +53,11 @@ export default function App() {
           <Route
             path="/ai-search"
             element={<AISearch />}
+          />
+
+          <Route
+              path="/knowledge"
+              element={<KnowledgeBase />}
           />
 
           <Route

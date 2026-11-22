@@ -30,6 +30,9 @@ data/chroma/
 # Uploaded jewellery product images
 data/product_images/
 
+# Uploaded Knowledge Base documents
+data/knowledge_documents/
+
 # Other uploaded files
 uploads/
 

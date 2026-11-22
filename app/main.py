@@ -15,7 +15,8 @@ from app.routers import (
     gmail_inbox,
     email_classification,
     email_drafts,
-    gmail_attachments
+    gmail_attachments,
+    knowledge
 )
 
 from app.agents.graph import build_graph
@@ -73,7 +74,8 @@ for router in (
     gmail_inbox.router,
     email_classification.router,
     email_drafts.router,
-    gmail_attachments.router
+    gmail_attachments.router,
+    knowledge.router
 ):
     app.include_router(router)
 

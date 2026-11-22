@@ -47,6 +47,7 @@ services:
     volumes:
       - chroma_data:/app/data/chroma
       - product_images:/app/data/product_images
+      - knowledge_documents:/app/data/knowledge_documents
     depends_on:
       mysql:
         condition: service_healthy
@@ -86,6 +87,38 @@ services:
     networks:
       - internal
   
+  knowledge_indexing_worker:
+    image: jewelagentlab-backend:local
+    restart: unless-stopped
+
+    command:
+      - rq
+      - worker
+      - knowledge_indexing
+      - --url
+      - redis://redis:6379/0
+
+    env_file:
+      - ./docker/demo.env
+
+    environment:
+      DATABASE_URL: mysql+pymysql://demo_user:${DEMO_DB_PASSWORD}@mysql:3306/jewelagentlab_demo
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_PATH: data/chroma
+
+    volumes:
+      - chroma_data:/app/data/chroma
+      - knowledge_documents:/app/data/knowledge_documents
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - internal
+
   indexing_dispatcher:
     image: jewelagentlab-backend:local
     restart: unless-stopped
@@ -175,6 +208,7 @@ volumes:
   redis_data:
   chroma_data:
   product_images:
+  knowledge_documents:
   chroma_server_data:
 
 networks:

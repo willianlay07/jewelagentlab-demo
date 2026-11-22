@@ -392,7 +392,7 @@ export default function GmailInbox() {
 
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight text-[#202B33]">
-                        Gmail Inbox
+                        AI Email Assistant
                     </h1>
 
                     <p className="text-sm text-slate-500">
