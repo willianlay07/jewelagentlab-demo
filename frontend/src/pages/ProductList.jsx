@@ -1,3 +1,4 @@
+import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 
 import {
@@ -28,6 +29,19 @@ export default function ProductList() {
     });
     const [saving, setSaving] = useState(false);
     const [editError, setEditError] = useState("");
+
+    const { user } = useAuth();
+
+    function canEditProduct(product) {
+        if (!user) return false;
+
+        if (user.role === "admin") return true;
+
+        return (
+            product.created_by === user.id &&
+            ["draft", "rejected"].includes(product.status)
+        );
+    }
 
     async function load() {
         try {
@@ -143,24 +157,32 @@ export default function ProductList() {
                     {items.map((product) => (
                         <div key={product.id} className="min-w-0">
                             <ProductCard product={product} />
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                <button
-                                    type="button"
-                                    className="btn-light text-sm"
-                                    onClick={() => openEditor(product)}
-                                >
-                                    Edit Product
-                                </button>
-                                {["draft", "rejected"].includes(product.status) && (
-                                    <button
-                                        type="button"
-                                        className="btn text-sm"
-                                        onClick={() => submit(product.id)}
-                                    >
-                                        Submit
-                                    </button>
-                                )}
-                            </div>
+                            {(canEditProduct(product) ||
+                                (["draft", "rejected"].includes(product.status) &&
+                                    (user?.role === "admin" || product.created_by === user?.id))) && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {canEditProduct(product) && (
+                                        <button
+                                            type="button"
+                                            className="btn-light text-sm"
+                                            onClick={() => openEditor(product)}
+                                        >
+                                            Edit Product
+                                        </button>
+                                    )}
+
+                                    {["draft", "rejected"].includes(product.status) &&
+                                        (user?.role === "admin" || product.created_by === user?.id) && (
+                                            <button
+                                                type="button"
+                                                className="btn text-sm"
+                                                onClick={() => submit(product.id)}
+                                            >
+                                                Submit
+                                            </button>
+                                        )}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
