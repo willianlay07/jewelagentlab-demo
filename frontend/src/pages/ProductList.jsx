@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import {
     listProducts,
     updateProduct,
-    submitProduct
+    submitProduct,
+    uploadImages,
+    analyzeProduct
 } from "../api/productApi";
 
+import { X } from "lucide-react";
 import { asList } from "../utils/products";
 import { errorText } from "../api/axios";
 import ProductCard from "../components/ProductCard";
+import { imageUrl } from "../utils/products";
 
 const categories = ["ring", "necklace", "earrings", "bracelet", "bangle"];
 
@@ -29,6 +33,9 @@ export default function ProductList() {
     });
     const [saving, setSaving] = useState(false);
     const [editError, setEditError] = useState("");
+    const [imageFiles, setImageFiles] = useState([]);
+    const [uploadingImages, setUploadingImages] = useState(false);
+    const [analyzingImages, setAnalyzingImages] = useState(false);
 
     const { user } = useAuth();
 
@@ -61,6 +68,8 @@ export default function ProductList() {
     function openEditor(product) {
         setEditing(product);
         setEditError("");
+        setImageFiles([]);
+
         setForm({
             name: product.name || "",
             category: product.category || "ring",
@@ -69,6 +78,55 @@ export default function ProductList() {
             description: product.description || "",
             attributes: JSON.stringify(product.attributes || {}, null, 2)
         });
+    }
+
+    async function handleImageUpload() {
+        if (!editing || imageFiles.length === 0) return;
+
+        setUploadingImages(true);
+        setEditError("");
+
+        try {
+            const updated = await uploadImages(editing.id, imageFiles);
+
+            setEditing(updated);
+            setImageFiles([]);
+            await load();
+
+            setMessage("Product images uploaded successfully.");
+        } catch (e) {
+            setEditError(errorText(e));
+        } finally {
+            setUploadingImages(false);
+        }
+    }
+
+    async function handleImageAnalysis() {
+        if (!editing || !editing.images?.length) return;
+
+        setAnalyzingImages(true);
+        setEditError("");
+
+        try {
+            const data = await analyzeProduct(editing.id);
+
+            const attrs =
+                data.attributes ||
+                data.suggested_attributes ||
+                data.suggestions ||
+                data;
+
+            setForm((previous) => ({
+                ...previous,
+                attributes: JSON.stringify(attrs, null, 2)
+            }));
+
+            setMessage("AI analysis completed. Review the suggested attributes before saving.");
+        } catch (e) {
+            setEditError(errorText(e));
+        } finally {
+            setAnalyzingImages(false);
+        }
     }
 
     function field(key, value) {
@@ -131,6 +189,14 @@ export default function ProductList() {
     async function submit(id) {
         setError("");
         setMessage("");
+
+        const product = items.find((p) => p.id === id);
+
+        if (!product?.images?.length) {
+            setError("Please upload at least one product image before submitting.");
+            return;
+        }
+
         try {
             await submitProduct(id);
             setMessage("Product submitted for approval.");
@@ -173,13 +239,22 @@ export default function ProductList() {
 
                                     {["draft", "rejected"].includes(product.status) &&
                                         (user?.role === "admin" || product.created_by === user?.id) && (
-                                            <button
-                                                type="button"
-                                                className="btn text-sm"
-                                                onClick={() => submit(product.id)}
-                                            >
-                                                Submit
-                                            </button>
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    className="btn text-sm"
+                                                    disabled={!product.images?.length}
+                                                    onClick={() => submit(product.id)}
+                                                >
+                                                    Submit
+                                                </button>
+
+                                                {!product.images?.length && (
+                                                    <p className="text-xs text-amber-700 mt-1">
+                                                        Upload at least one image before submitting.
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
                                 </div>
                             )}
@@ -197,9 +272,25 @@ export default function ProductList() {
                         aria-labelledby="edit-product-title"
                         className="card w-full max-w-2xl max-h-[90dvh] overflow-y-auto space-y-4"
                     >
-                        <h2 id="edit-product-title" className="font-bold text-lg">
-                            Edit Product — {editing.code}
-                        </h2>
+                        <div className="flex items-center justify-between gap-4">
+                            <h2
+                                id="edit-product-title"
+                                className="font-bold text-lg"
+                            >
+                                Edit Product — {editing.code}
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                disabled={saving || uploadingImages || analyzingImages}
+                                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors disabled:opacity-50"
+                                aria-label="Close product editor"
+                                title="Close"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
 
                         {editError && <div className="error" role="alert">{editError}</div>}
 
@@ -250,6 +341,86 @@ export default function ProductList() {
                                 onChange={(e) => field("description", e.target.value)}
                             />
                         </div>
+
+                        <div className="space-y-3">
+                            <label className="label">
+                                Product Images ({editing.images?.length || 0}/8)
+                            </label>
+
+                            {editing.images?.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {editing.images.map((image, index) => (
+                                        <div
+                                            key={image.id ?? index}
+                                            className="rounded-lg border bg-white p-2"
+                                        >
+                                            <img
+                                                src={imageUrl(image)}
+                                                alt={`Product image ${index + 1}`}
+                                                className="h-28 w-full object-contain"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-amber-700">
+                                    No images uploaded. Upload at least one image
+                                    before submitting for approval.
+                                </p>
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                className="field"
+                                disabled={uploadingImages || saving}
+                                onChange={(e) =>
+                                    setImageFiles(Array.from(e.target.files || []))
+                                }
+                            />
+
+                            <button
+                                type="button"
+                                className="btn-light"
+                                disabled={
+                                    uploadingImages ||
+                                    saving ||
+                                    imageFiles.length === 0 ||
+                                    (editing.images?.length || 0) + imageFiles.length > 8
+                                }
+                                onClick={handleImageUpload}
+                            >
+                                {uploadingImages ? "Uploading..." : "Upload Images"}
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="label">AI Image Analysis</label>
+
+                            <button
+                                type="button"
+                                className="btn-light"
+                                disabled={
+                                    analyzingImages ||
+                                    uploadingImages ||
+                                    saving ||
+                                    !editing.images?.length
+                                }
+                                onClick={handleImageAnalysis}
+                            >
+                                {analyzingImages
+                                    ? "Analyzing Images..."
+                                    : "Analyze Product Images"}
+                            </button>
+
+                            <p className="text-xs muted">
+                                AI will suggest jewellery attributes based on the uploaded images.
+                                Review the suggestions before saving.
+                            </p>
+                        </div>
+
+                        
 
                         <div>
                             <label className="label" htmlFor="edit-attributes">Attributes (JSON)</label>
